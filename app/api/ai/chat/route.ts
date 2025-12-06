@@ -1,2 +1,2 @@
 
-export async function POST(req) { return Response.json({ reply: "AI placeholder" }); }
+export async function POST() { return Response.json({ reply: "AI placeholder" }); }

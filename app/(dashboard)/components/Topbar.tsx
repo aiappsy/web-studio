@@ -1,9 +1,9 @@
 
 export default function Topbar() {
   return (
-    <div className="h-14 bg-white border-b flex items-center px-4 justify-between">
+    <header className="h-14 bg-white dark:bg-gray-900 border-b flex items-center justify-between px-4">
       <div>Workspace</div>
       <div>User</div>
-    </div>
+    </header>
   );
 }
