@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,302 +9,67 @@ datasource db {
 
 model User {
   id           String    @id @default(cuid())
-  email        String    @unique
+  email        String?   @unique
   name         String?
-  avatar       String?
-  passwordHash String?
-  role         String    @default("user") // user, admin
-  isActive     Boolean   @default(true)
+  image        String?
   createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  
-  // Relations
-  workspaces   WorkspaceMember[]
-  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
-  projects     Project[]
-  deployments  Deployment[]
-  byokConfigs  BYOKConfig[]
-  usageTracking UsageTracking[]
-  
-  @@map("users")
+  apiKey       String?   @unique
+  workspaces   Workspace[]
 }
 
 model Workspace {
-  id          String   @id @default(cuid())
+  id        String     @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     User       @relation(fields: [ownerId], references: [id])
+  createdAt DateTime   @default(now())
+  sites     Site[]
+}
+
+model Site {
+  id          String     @id @default(cuid())
   name        String
-  description String?
-  slug        String   @unique
-  ownerId     String
-  settings    Json?    // Workspace-specific settings
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  members     WorkspaceMember[]
-  projects    Project[]
-  byokConfigs BYOKConfig[]
-  usageTracking UsageTracking[]
-  
-  @@map("workspaces")
-}
-
-model WorkspaceMember {
-  id         String   @id @default(cuid())
-  userId     String
   workspaceId String
-  role       String   @default("member") // owner, admin, member, viewer
-  joinedAt   DateTime @default(now())
-  
-  // Relations
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, workspaceId])
-  @@map("workspace_members")
-}
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime   @default(now())
 
-model BYOKConfig {
-  id                String   @id @default(cuid())
-  userId            String
-  workspaceId       String
-  encryptedApiKey   String   // Encrypted OpenRouter API key
-  keyName           String?
-  keyDescription    String?
-  
-  // Usage limits
-  monthlyTokenLimit Int      @default(50000)
-  costLimit         Float    @default(50.0) // USD
-  
-  // AI preferences
-  preferredModel    String   @default("anthropic/claude-3.5-sonnet")
-  temperature       Float    @default(0.7)
-  maxTokens         Int      @default(4000)
-  
-  // Feature flags
-  enableStreaming   Boolean  @default(true)
-  enableOptimization Boolean @default(true)
-  enableCaching     Boolean  @default(true)
-  
-  // Advanced settings
-  customSystemPrompt String?
-  responseFormat    String   @default("markdown") // text, json, markdown
-  
-  // Security
-  allowedDomains    String[] @default([])
-  ipWhitelist       String[] @default([])
-  
-  // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now())
-  lastUsedAt        DateTime?
-  
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  usageTracking     UsageTracking[]
-  
-  @@unique([userId, workspaceId])
-  @@map("byok_configs")
-}
-
-model UsageTracking {
-  id           String   @id @default(cuid())
-  userId       String
-  workspaceId  String
-  byokConfigId String
-  
-  // Usage metrics
-  tokensUsed   Int
-  cost         Float
-  model        String
-  requestType  String   // generation, editing, deployment, export
-  
-  // Request details
-  success      Boolean
-  errorMessage String?
-  responseTime Int      // milliseconds
-  
-  // Timestamps
-  timestamp    DateTime @default(now())
-  
-  // Relations
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  byokConfig   BYOKConfig @relation(fields: [byokConfigId], references: [id], onDelete: Cascade)
-  
-  @@index([userId, workspaceId, timestamp])
-  @@index([byokConfigId, timestamp])
-  @@map("usage_tracking")
-}
-
-model Project {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  workspaceId String
-  userId      String
-  status      String   @default("draft") // draft, building, published, archived
-  type        String   @default("website") // website, app, blog, etc.
-  
-  // Project data
-  projectData Json?    // Stores the complete website structure
-  theme       Json?    // Theme configuration
-  settings    Json?    // Project-specific settings
-  metadata    Json?    // SEO, social media, etc.
-  
-  // Build info
-  lastBuiltAt DateTime?
-  buildLogs   String?
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   pages       Page[]
-  deployments Deployment[]
-  
-  @@map("projects")
 }
 
 model Page {
-  id          String   @id @default(cuid())
-  projectId   String
-  title       String
-  slug        String
-  content     Json     // Page content structure
-  seoTitle    String?
-  seoDescription String?
-  isPublished Boolean  @default(false)
-  order       Int      @default(0)
-  
-  // Page settings
-  template    String?
-  layout      String   @default("default")
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  @@unique([projectId, slug])
-  @@map("pages")
+  id        String    @id @default(cuid())
+  siteId    String
+  site      Site      @relation(fields: [siteId], references: [id])
+  name      String
+  path      String
+  blocks    Json
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
 }
 
-model Deployment {
-  id          String   @id @default(cuid())
-  projectId   String
-  workspaceId String
-  userId      String
-  platform    String   // coolify, vercel, netlify, github, etc.
-  status      String   @default("pending") // pending, building, success, failed, cancelled
-  
-  // Deployment details
-  url         String?
-  logs        String?
-  settings    Json?    // Deployment-specific settings
-  metadata    Json?    // Build metadata, environment, etc.
-  
-  // Build info
-  buildId     String?
-  buildUrl    String?
-  commitHash  String?
-  branch      String   @default("main")
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  completedAt DateTime?
-  
-  // Relations
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([projectId, status])
-  @@index([workspaceId, platform])
-  @@map("deployments")
+model AIJob {
+  id        String   @id @default(cuid())
+  type      String
+  status    String   @default("pending")
+  input     Json
+  output    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Template {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  category    String
-  subcategory String?
-  thumbnail   String?
-  preview     String?  // Preview URL or image
-  structure   Json     // Template structure
-  theme       Json?    // Default theme
-  tags        String[] @default([])
-  
-  // Template metadata
-  isPublic    Boolean  @default(true)
-  isPremium   Boolean  @default(false)
-  difficulty  String   @default("beginner") // beginner, intermediate, advanced
-  estimatedTime Int?   // Estimated build time in minutes
-  
-  // Usage stats
-  usageCount  Int      @default(0)
-  rating      Float    @default(0)
-  reviewCount Int      @default(0)
-  
-  // Creator info
-  createdBy   String?
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([category, isPublic])
-  @@index([tags])
-  @@map("templates")
+model ExportJob {
+  id        String   @id @default(cuid())
+  siteId    String
+  status    String   @default("pending")
+  resultUrl String?
+  logs      Json?
+  createdAt DateTime @default(now())
 }
 
-model JobQueue {
-  id          String   @id @default(cuid())
-  type        String   // ai-generation, deployment, export, etc.
-  status      String   @default("pending") // pending, processing, completed, failed
-  
-  // Job data
-  data        Json     // Job-specific data
-  result      Json?    // Job result
-  error       String?
-  
-  // Priority and scheduling
-  priority    Int      @default(0)
-  attempts    Int      @default(0)
-  maxAttempts Int      @default(3)
-  delayUntil  DateTime?
-  
-  // Timing
-  createdAt   DateTime @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-  
-  // Relations
-  userId      String?
-  workspaceId String?
-  projectId   String?
-  
-  @@index([status, priority, createdAt])
-  @@index([type, status])
-  @@map("job_queue")
-}
-
-model SystemConfig {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       Json
-  description String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("system_config")
+model DeployJob {
+  id        String   @id @default(cuid())
+  siteId    String
+  status    String   @default("pending")
+  logs      Json?
+  createdAt DateTime @default(now())
 }
