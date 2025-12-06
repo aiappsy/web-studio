@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,68 +9,149 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String?   @unique
+  id           String       @id @default(cuid())
   name         String?
+  email        String?      @unique
+  password     String?
   image        String?
-  createdAt    DateTime  @default(now())
-  apiKey       String?   @unique
-  workspaces   Workspace[]
+  createdAt    DateTime     @default(now())
+  workspace    Workspace?
+  workspaceId  String?
+
+  accounts     Account[]
+  sessions     Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  id_token          String?
+  scope             String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Workspace {
-  id        String     @id @default(cuid())
-  name      String
-  ownerId   String
-  owner     User       @relation(fields: [ownerId], references: [id])
-  createdAt DateTime   @default(now())
-  sites     Site[]
+  id         String     @id @default(cuid())
+  name       String
+  createdAt  DateTime   @default(now())
+  projects   Project[]
+  templates  Template[]
+  apiKeys    ApiKey[]
+  assets     Asset[]
+  auditLogs  AuditLog[]
+  users      User[]     @relation("WorkspaceUsers")
 }
 
-model Site {
-  id          String     @id @default(cuid())
+model Project {
+  id          String       @id @default(cuid())
   name        String
   workspaceId String
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id])
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  publishedAt DateTime?
 
-  pages       Page[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  pages     Page[]
+  versions  ProjectVersion[]
 }
 
 model Page {
-  id        String    @id @default(cuid())
-  siteId    String
-  site      Site      @relation(fields: [siteId], references: [id])
+  id        String      @id @default(cuid())
+  projectId String
   name      String
   path      String
-  blocks    Json
-  updatedAt DateTime  @updatedAt
-  createdAt DateTime  @default(now())
+  tree      Json
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+  versions PageVersion[]
 }
 
-model AIJob {
+model PageVersion {
   id        String   @id @default(cuid())
-  type      String
-  status    String   @default("pending")
-  input     Json
-  output    Json?
+  pageId    String
+  label     String?
+  tree      Json
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  page Page @relation(fields: [pageId], references: [id])
 }
 
-model ExportJob {
-  id        String   @id @default(cuid())
-  siteId    String
-  status    String   @default("pending")
-  resultUrl String?
-  logs      Json?
-  createdAt DateTime @default(now())
+model ProjectVersion {
+  id         String   @id @default(cuid())
+  projectId  String
+  label      String?
+  createdAt  DateTime @default(now())
+  snapshot   Json
+
+  project Project @relation(fields: [projectId], references: [id])
 }
 
-model DeployJob {
-  id        String   @id @default(cuid())
-  siteId    String
-  status    String   @default("pending")
-  logs      Json?
-  createdAt DateTime @default(now())
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  tree        Json
+  workspaceId String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model Asset {
+  id          String   @id @default(cuid())
+  workspaceId String
+  url         String
+  name        String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  key         String   @unique
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  message     String
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 }
