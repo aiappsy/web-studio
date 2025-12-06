@@ -1,15 +1,8 @@
 
-import './globals.css';
-
-export const metadata = {
-  title: 'WebStudio',
-  description: 'AI Builder SaaS',
-};
-
-export default function RootLayout({ children }) {
+export default function AuthLayout({ children }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-4">
+      {children}
+    </div>
   );
 }

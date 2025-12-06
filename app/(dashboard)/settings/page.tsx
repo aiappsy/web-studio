@@ -1,4 +1,4 @@
 
 export default function SettingsPage() {
-  return <div>Settings (placeholder)</div>;
+  return <div>Settings</div>;
 }

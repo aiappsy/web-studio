@@ -1,3 +1,3 @@
 
-export async function POST(req) { return Response.json({ ok: true }); }
-export async function GET(req) { return Response.json({ ok: true }); }
+export async function GET() { return Response.json({ projects: [] }); }
+export async function POST() { return Response.json({ created: true }); }
