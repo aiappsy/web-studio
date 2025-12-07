@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,8 +14,6 @@ model User {
   password     String?
   image        String?
   createdAt    DateTime     @default(now())
-  workspace    Workspace?
-  workspaceId  String?
 
   accounts     Account[]
   sessions     Session[]
@@ -67,7 +64,6 @@ model Workspace {
   apiKeys    ApiKey[]
   assets     Asset[]
   auditLogs  AuditLog[]
-  users      User[]     @relation("WorkspaceUsers")
 }
 
 model Project {
